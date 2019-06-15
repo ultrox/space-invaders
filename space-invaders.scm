@@ -37,6 +37,10 @@
 (define MISSILE (ellipse 5 15 "solid" "red"))
 (define MTS (empty-scene WIDTH HEIGHT))
 
+;; Controls
+(define RIGHT "l")
+(define LEFT "h")
+(define SHOOT " ")
 
 ;; Data Definitions:
 
@@ -55,10 +59,10 @@
 
 
 
-(define-struct tank (x dir))
+(define-struct tank (x dx))
 ;; Tank is (make-tank Number Integer[-1, 1])
 ;; interp. the tank location is x, HEIGHT - TANK-HEIGHT/2 in screen coordinates
-;;         the tank moves TANK-SPEED pixels per clock tick left if dir -1, right if dir 1
+;;         the tank moves TANK-SPEED pixels per clock tick left if dx -1, right if dx 1
 
 (define T0 (make-tank (/ WIDTH 2) 1))   ;center going right
 (define T1 (make-tank 50 1))            ;going right
@@ -66,7 +70,7 @@
 
 #;
 (define (fn-for-tank t)
-  (... (tank-x t) (tank-dir t)))
+  (... (tank-x t) (tank-dx t)))
 
 
 
@@ -112,23 +116,95 @@
 ;; start the world with (main false)
 ;; 
 (define (main game)
-  (big-bang game              ; Game
-            (on-tick   next-game)     ; Game -> Game
-            (to-draw   render-game)   ; Game -> Image
-            (on-key    handle-key)))  ; Game KeyEvent -> Game
+  (big-bang game                      ; Game
+    (on-tick   next-game)     ; Game -> Game
+    (to-draw   render-game)   ; Game -> Image
+    (on-key    handle-key)))  ; Game KeyEvent -> Game
 
 ;; Game -> Game
-;; produce the next state of the game 
+;; produce the next state of the game
 ;; !!!
-(define (next-game game) (list empty empty empty))
+(check-expect (next-game (make-game empty empty T0))
+              (make-game empty empty (make-tank (/ WIDTH 2) 1)))
+
+(define (next-game game) game) ; stub
 
 
 ;; Game -> Image
 ;; render game with all its elements 
 ;; !!!
-(define (render-game game) MTS)
+#;
+(check-expect (render-game (make-game empty empty T0)) ;; exapmle 
+              (place-image TANK (tank-x T1) (- HEIGHT TANK-HEIGHT/2) BACKGROUND))
+
+(define (render-game game) BACKGROUND)
 
 ;; Game KeyEvent -> Game
-;; move left right or shoot based of key pressed 
-;; !!!
-(define (handle-key game ke) game)
+;; move left right or shoot based of key pressed
+
+; SHOOTING CASE
+;;!!!
+
+; RIGHT CASES
+(check-expect (handle-key (make-game empty empty (make-tank 40 1)) RIGHT)
+              (make-game empty empty (make-tank (+ 40 TANK-SPEED ) 1)))
+
+; LEFT CASES
+(check-expect (handle-key (make-game empty empty (make-tank 40 -1)) LEFT)
+              (make-game empty empty (make-tank (- 40 TANK-SPEED ) -1)))
+; ELSE CASE
+(check-expect (handle-key (make-game empty empty (make-tank 40 -1)) "w")
+              (make-game empty empty (make-tank 40 -1)))
+
+
+; (define (handle-key game ke) game) ;stub
+
+; <Template from recepie handle-key>
+
+(define (handle-key g ke)
+  (cond [(key=? ke LEFT) (make-game  (game-invaders g)
+                                     (game-missiles g)
+                                     (next-left-x (game-tank g)))]
+        [(key=? ke RIGHT) (make-game  (game-invaders g)
+                                      (game-missiles g)
+                                      (next-right-x (game-tank g)))]
+        [else g]))
+
+;; Tank -> Tank
+;; produce correct new x position based on current position of tank going left
+
+(check-expect (next-left-x (make-tank 50 -1))                   ; normal going left
+              (make-tank (- 50 TANK-SPEED) -1))
+
+(check-expect (next-left-x (make-tank (- 0 TANK-SPEED) -1))     ; at end trying to go left
+              (make-tank 0 1))
+
+(check-expect (next-left-x (make-tank (- 1 TANK-SPEED) -1))     ; almost 0 will overflow
+              (make-tank 0 1))
+
+; (define (next-left-x game) game) ;stub
+
+(define (next-left-x t)
+  (if (> (- (tank-x t) TANK-SPEED) 0)
+      (make-tank (- (tank-x t) TANK-SPEED) (tank-dx t))
+      (make-tank 0 1)))
+
+;; Tank -> Tank
+;; produce correct x position based on current position of tank going right
+
+(check-expect (next-right-x (make-tank 10 1))                 ; normal going right
+              (make-tank (+ TANK-SPEED 10) 1))
+
+(check-expect (next-right-x (make-tank WIDTH 1))              ; at end trying to go right 
+              (make-tank WIDTH -1))
+
+(check-expect (next-right-x (make-tank (+ (- WIDTH 2) 5) 1))  ; almost end will overflow 
+              (make-tank WIDTH -1))
+
+; (define (next-right-x game) game) ;stub
+
+(define (next-right-x t)
+  (if (< (+ (tank-x t) TANK-SPEED) WIDTH)
+      (make-tank (+ (tank-x t) TANK-SPEED) (tank-dx t))
+      (make-tank WIDTH -1)))
+
