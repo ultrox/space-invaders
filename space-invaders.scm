@@ -40,7 +40,7 @@
 ;; Controls
 (define RIGHT "l")
 (define LEFT "h")
-(define SHOOT " ")
+(define SPACE " ")
 
 ;; Data Definitions:
 
@@ -108,6 +108,20 @@
 (define G2 (make-game (list I1) (list M1) T1))
 (define G3 (make-game (list I1 I2) (list M1 M2) T1))
 
+;; Missiles is one of:
+;;  - empty
+;;  - (cons Missle Missles)
+;; interp. list of missles
+
+(define MSLS1 empty)
+(define MSLS2 (list (make-missile 100 100) (make-missile 200 200)))
+
+#;
+(define (fn-for-msls msls)
+  (cond [(empty? msls) ...]
+        [else
+         (... (fn-for-missile (first msls))
+              (fn-for-msls (rest msls)))]))
 
 ;; =================
 ;; Functions:
@@ -197,6 +211,9 @@
         [(key=? ke RIGHT) (make-game  (game-invaders g)
                                       (game-missiles g)
                                       (turn-tank (game-tank g) -1))]
+        [(key=? ke SPACE) (make-game  (game-invaders g)
+                                      (shoot (game-missiles g))
+                                      (game-tank g))]
         [else g]))
 
 ;; Tank ndx -> Tank
@@ -215,3 +232,8 @@
       (make-tank (tank-x t) -1)  ; right
       (make-tank (tank-x t) 1))) ; left
 
+
+;; Missles -> Missles
+;; add new miisiles to the list 'shooting'
+;; !!!
+(define (shoot lom) empty)
