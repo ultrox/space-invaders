@@ -35,12 +35,17 @@
 (define TANK-HEIGHT/2 (/ (image-height TANK) 2))
 
 (define MISSILE (ellipse 5 15 "solid" "red"))
+(define MISSLE-ORIGIN (- HEIGHT (image-height TANK)))
+
 (define MTS (empty-scene WIDTH HEIGHT))
 
 ;; Controls
 (define RIGHT "l")
 (define LEFT "h")
 (define SPACE " ")
+
+;; FOR TESTING
+(define RENDER-TANKx100 (place-image TANK 100 (- HEIGHT TANK-HEIGHT/2) BACKGROUND))
 
 ;; Data Definitions:
 
@@ -129,8 +134,8 @@
 ;; Game -> Game
 ;; start the world with (main (make-game empty empty T101))
 ;; 
-(define (main game)
-  (big-bang game                      ; Game
+(define (main dx)
+  (big-bang (make-game empty empty (make-tank 0 dx))                      ; Game
     (on-tick   next-game)     ; Game -> Game
     (to-draw   render-game)   ; Game -> Image
     (on-key    handle-key)))  ; Game KeyEvent -> Game
@@ -176,8 +181,12 @@
 (check-expect (render-game (make-game empty empty T0)) ;; exapmle 
               (place-image TANK (tank-x T1) (- HEIGHT TANK-HEIGHT/2) BACKGROUND))
 
+
 (define (render-game g)
-  (render-tank (game-tank g)))
+  (render-missiles
+   (game-missiles g)
+   (render-tank (game-tank g))))
+
 
 (define (render-tank t)
   (place-image TANK (tank-x t) (- HEIGHT TANK-HEIGHT/2) BACKGROUND))
@@ -212,7 +221,7 @@
                                       (game-missiles g)
                                       (turn-tank (game-tank g) -1))]
         [(key=? ke SPACE) (make-game  (game-invaders g)
-                                      (shoot (game-missiles g))
+                                      (shoot (game-missiles g) (game-tank g))
                                       (game-tank g))]
         [else g]))
 
@@ -233,7 +242,43 @@
       (make-tank (tank-x t) 1))) ; left
 
 
-;; Missles -> Missles
-;; add new miisiles to the list 'shooting'
-;; !!!
-(define (shoot lom) empty)
+;; Missles Tank -> Missles
+;; add new missile to the list 'shooting' of missiles from tank x-axis
+(check-expect (shoot empty (make-tank 10 -1)) (list (make-missile 10 MISSLE-ORIGIN))) 
+(check-expect (shoot (list (make-missile 10 20)) (make-tank 100 -1))
+              (list (make-missile 100 MISSLE-ORIGIN) (make-missile 10 20)))
+
+
+; (define (shoot lom t) empty) ; stub
+
+; <Template from Missiles>
+
+(define (shoot msls t)
+  (cond [(empty? msls) (list (make-missile (tank-x t) MISSLE-ORIGIN))]
+        [else
+         (cons (make-missile (tank-x t) MISSLE-ORIGIN) msls)]))
+
+;; Missiles Image -> Image
+;; render missiles on appropriate x,y possitions
+(check-expect (render-missiles empty RENDER-TANKx100)
+              RENDER-TANKx100)                                    ; no missiles (base case)
+(check-expect (render-missiles (list
+                                (make-missile 100 MISSLE-ORIGIN)  ; just fired
+                                (make-missile 200 200)            ; normal 
+                                (make-missile 20 0))              ; exiting world view
+                               RENDER-TANKx100)             
+              (place-image MISSILE 20 0
+                           (place-image MISSILE 200 200
+                                        (place-image MISSILE 100 MISSLE-ORIGIN RENDER-TANKx100))))
+
+
+; (define (render-missiles msls img) img) ; stub
+; <Template from Missiles>
+
+(define (render-missiles msls img)
+  (cond [(empty? msls) img]
+        [else
+         (place-image MISSILE
+                      (missile-x (first msls)) ; helper not needed, not complex
+                      (missile-y (first msls))
+                      (render-missiles (rest msls) img))]))
