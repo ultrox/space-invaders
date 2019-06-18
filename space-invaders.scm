@@ -152,7 +152,7 @@
 
 ;(define (next-game game) game) ; stub
 (define (next-game game) (make-game empty
-                                    empty
+                                    (advance-msls (game-missiles game))
                                     (advance-tank (game-tank game))))
 
 ;; Tank -> Tank
@@ -282,3 +282,35 @@
                       (missile-x (first msls)) ; helper not needed, not complex
                       (missile-y (first msls))
                       (render-missiles (rest msls) img))]))
+
+
+;; Missiles -> Missiles
+;; advance each y-axis of a given missile in the list
+(check-expect (advance-msls empty) empty)
+(check-expect (advance-msls (list (make-missile 20 MISSLE-ORIGIN)))
+              (list (make-missile 20 (- MISSLE-ORIGIN MISSILE-SPEED))))
+
+(check-expect (advance-msls (list (make-missile 20 100) (make-missile 20 200)))
+              (list (make-missile 20 (- 100 MISSILE-SPEED))
+                    (make-missile 20 (- 200 MISSILE-SPEED))))
+
+
+; (define (advance-msls msls) msls) ;stub
+; <Template from Missiles>
+
+(define (advance-msls msls)
+  (cond [(empty? msls) empty]
+        [else
+         (cons (advance-y (first msls))
+               (advance-msls (rest msls)))]))
+
+;; Missile -> Missile
+;; advance y of missile by MISSILE-SPEED
+(check-expect (advance-y (make-missile 20 200))
+              (make-missile 20 (- 200 MISSILE-SPEED)))
+
+; (define (advance-y m) m) ; stub
+; <Template from Missile>
+
+(define (advance-y m)
+  (make-missile (missile-x m) (- (missile-y m) MISSILE-SPEED)))
