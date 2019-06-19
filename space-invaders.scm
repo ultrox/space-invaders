@@ -152,7 +152,7 @@
               (make-game empty empty (make-tank (+ TANK-SPEED (- -1) 10) -1)))
 
 ;(define (next-game game) game) ; stub
-(define (next-game game) (make-game empty
+(define (next-game game) (make-game (manage-invaders (game-invaders game))
                                     (advance-msls (game-missiles game))
                                     (advance-tank (game-tank game))))
 
@@ -340,3 +340,29 @@
 
 (define (advance-y m)
   (make-missile (missile-x m) (- (missile-y m) MISSILE-SPEED)))
+
+;; INVADERS
+;; ========
+
+;; Invaders -> Invaders
+;; manages appearence rendering and advancing of enemies
+;; !!!
+
+(define (manage-invaders loi)
+  (add-new-invader (advance-invaders loi)))
+
+
+;; Invaders -> Invaders
+;; making new invader appear on random x depending on RATE
+;; !!!
+(define (add-new-invader loi) empty)
+
+;; Invaders -> Invaders
+;; advance y position on each invaders with INVADER-SPEED
+;; !!!
+(define (advance-invaders loi) loi)
+
+;; Invaders -> Image
+;; render each invader from list at their respective x,y
+;; !!!
+(define (render-invaders loi) BACKGROUND)
