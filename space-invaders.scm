@@ -33,6 +33,7 @@
                      (rectangle 20 10 "solid" "black"))))   ;main body
 
 (define TANK-HEIGHT/2 (/ (image-height TANK) 2))
+(define TANK-WIDTH/2 (/ (image-width TANK) 2))
 
 (define MISSILE (ellipse 5 15 "solid" "red"))
 (define MISSLE-ORIGIN (- HEIGHT (image-height TANK)))
@@ -158,16 +159,29 @@
 ;; Tank -> Tank
 ;; advance x of tank given speed & dx until edges of world
 
-(check-expect (advance-tank (make-tank 10 -1))              ; normal advance right
-              (make-tank (+ 10 (* TANK-SPEED (- -1))) -1))
+(check-expect (advance-tank (make-tank 15 -1))              ; normal advance right
+              (make-tank (+ 15 (* TANK-SPEED (- -1))) -1))
 
 (check-expect (advance-tank (make-tank 20 1))               ; normal advance left
               (make-tank (+ 20 (* TANK-SPEED (- 1))) 1))
 
+(check-expect (advance-tank (make-tank (- WIDTH 2) -1))
+              (make-tank (- WIDTH TANK-WIDTH/2) -1))
+
+(check-expect (advance-tank (make-tank 0 1))               ; l stop before boundary edge
+              (make-tank TANK-WIDTH/2 1))
 
 ; (define (advance-tank t) t) ;stub
+
 (define (advance-tank t)
-  (make-tank (+ (tank-x t) (* TANK-SPEED (- (tank-dx t)))) (tank-dx t)))
+  (cond [(>= (+ (tank-x t) (* TANK-SPEED (- (tank-dx t)))) (- WIDTH TANK-WIDTH/2))
+         (make-tank (- WIDTH TANK-WIDTH/2) (tank-dx t))]
+        [(<= (+ (tank-x t) (* TANK-SPEED (- (tank-dx t)))) TANK-WIDTH/2)
+         (make-tank TANK-WIDTH/2 (tank-dx t))]
+        [else
+         (make-tank (+ (tank-x t) (* TANK-SPEED (- (tank-dx t))))
+                    (tank-dx t))]))
+
 
 #;
 (define (fn-for-tank t)
