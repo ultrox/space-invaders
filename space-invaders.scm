@@ -308,6 +308,8 @@
               (list (make-missile 20 (- 100 MISSILE-SPEED))
                     (make-missile 20 (- 200 MISSILE-SPEED))))
 
+(check-expect (advance-msls (list (make-missile 20 -10) (make-missile 20 MISSLE-ORIGIN)))
+              (list (make-missile 20 (- MISSLE-ORIGIN MISSILE-SPEED))))
 
 ; (define (advance-msls msls) msls) ;stub
 ; <Template from Missiles>
@@ -315,8 +317,18 @@
 (define (advance-msls msls)
   (cond [(empty? msls) empty]
         [else
-         (cons (advance-y (first msls))
-               (advance-msls (rest msls)))]))
+         (if (out-range? (first msls)) ; knowlage shift
+             (advance-msls (rest msls))
+             (cons (advance-y (first msls)) (advance-msls (rest msls))))]))
+
+;; Missile -> Boolean
+;; return true if missile y is smaller then 0 (outside of visible canvas)
+(check-expect (out-range? (make-missile 30            MISSLE-ORIGIN)) false) ; don't filter #false
+(check-expect (out-range? (make-missile 30                   HEIGHT)) false) ; filter #true
+(check-expect (out-range? (make-missile 30      (- 0 MISSILE-SPEED)))  true)  ; outside visible canvas
+
+(define (out-range? m)
+  (< (missile-y m) 0))
 
 ;; Missile -> Missile
 ;; advance y of missile by MISSILE-SPEED
