@@ -10,6 +10,8 @@ This is my attempt to recreate minimum features set of space invaders in Scheme
 - Use will win if kill 100 ships
 - User will lose if any of ships touch the 'ground'
 
+[Trello](https://trello.com/b/Ec9TDjbe/space-invaders)
+
 # Tasks:
 
 ## 0 Setup boilerplate
