@@ -16,7 +16,7 @@
 
 (define HIT-RANGE 10)
 
-(define INVADE-RATE 100)
+(define INVADE-RATE 1) ; 1% chance to get invader per tick
 
 (define BACKGROUND (empty-scene WIDTH HEIGHT))
 
@@ -197,9 +197,9 @@
 
 
 (define (render-game g)
-  (render-missiles
-   (game-missiles g)
-   (render-tank (game-tank g))))
+  (render-invaders (game-invaders g) (render-missiles
+                                      (game-missiles g)
+                                      (render-tank (game-tank g)))))
 
 
 (define (render-tank t)
@@ -344,6 +344,21 @@
 ;; INVADERS
 ;; ========
 
+;; Invaders is one of:
+;;  - empty
+;;  - (cons Invader Invaders)
+;; interp. list of invaders
+
+(define INVS1 empty)
+(define INVS2 (list I1 I2))
+
+#;
+(define (fn-for-invaders loi)
+  (cond [(empty? loi) ...]
+        [else
+         (... (fn-for-invader (first loi))
+              (fn-for-invaders (rest loi)))]))
+
 ;; Invaders -> Invaders
 ;; manages appearence rendering and advancing of enemies
 ;; !!!
@@ -353,16 +368,27 @@
 
 
 ;; Invaders -> Invaders
-;; making new invader appear on random x depending on RATE
-;; !!!
-(define (add-new-invader loi) empty)
-
-;; Invaders -> Invaders
 ;; advance y position on each invaders with INVADER-SPEED
 ;; !!!
-(define (advance-invaders loi) loi)
+(define (advance-invaders loi) loi) ;stub
+
+
+;; Invaders -> Invaders
+;; making new invader appear on random x depending on INVADE-RATE
+;; !!!
+(define (add-new-invader loi) empty) ; stub
+
 
 ;; Invaders -> Image
 ;; render each invader from list at their respective x,y
-;; !!!
-(define (render-invaders loi) BACKGROUND)
+
+; (define (render-invaders loi img) img) ; stub
+
+
+(define (render-invaders loi img)
+  (cond [(empty? loi) img]
+        [else
+         (place-image INVADER
+                      (invader-x (first loi)) ; helper not needed, not complex
+                      (invader-y (first loi))
+                      (render-invaders (rest loi) img))]))
