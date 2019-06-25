@@ -370,10 +370,40 @@
                    (random 100)))
 
 
-;; Invaders -> Invaders
-;; advance y position on each invaders based on INVADER-SPEED
+(check-expect (advance-invaders empty) empty)
+(check-expect (advance-invaders (list (make-invader 4 4 1)
+                                      (make-invader 5 5 1)
+                                      (make-invader 6 6 -1)))
+              (list
+               (make-invader (- 4 INVADER-X-SPEED) (+ 4 INVADER-Y-SPEED)  1)
+               (make-invader (- 5 INVADER-X-SPEED) (+ 5 INVADER-Y-SPEED)  1)
+               (make-invader (+ 6 INVADER-X-SPEED) (+ 6 INVADER-Y-SPEED) -1)))
 
-(define (advance-invaders loi) loi) ;stub
+; (define (advance-invaders loi) loi) ;stub
+
+(define (advance-invaders loi)
+  (cond [(empty? loi) empty]
+        [else
+         (cons (next-invader (first loi))
+               (advance-invaders (rest loi)))]))
+
+
+; Invader -> Invader
+;; produce invaders next position in the same dx or bounce if hit boundary
+;; !!!
+(check-expect (next-invader (make-invader 10 11 -1))          ; continue right
+              (make-invader (- 10 (* INVADER-X-SPEED -1)) (+ 11 INVADER-Y-SPEED) -1))
+
+(check-expect (next-invader (make-invader 11 12 1))           ; continue left
+              (make-invader (- 11 (* INVADER-X-SPEED 1)) (+ 12 INVADER-Y-SPEED) 1))
+
+
+(define (next-invader i)
+  (make-invader (- (invader-x i) (* INVADER-X-SPEED (invader-dx i))) ; go fruther right dx=-1
+                (+ (invader-y i) INVADER-Y-SPEED)                    ; go left dx=1
+                (invader-dx i)))
+
+
 
 ;; Invaders Number Number -> Invaders
 ;; add new invader to list of invaders on random x and random dx depending on INVADE-RATE
