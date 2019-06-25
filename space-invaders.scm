@@ -25,6 +25,10 @@
               -5 6
               (ellipse 20 10 "solid"   "blue")))            ;saucer
 
+(define INVADER-WIDTH/2 (/ (image-width INVADER) 2))
+(define R-WALL-OFFSET (- WIDTH INVADER-WIDTH/2))
+(define L-WALL-OFFSET INVADER-WIDTH/2)
+
 (define TANK
   (overlay/xy (overlay (ellipse 28 8 "solid" "black")       ;tread center
                        (ellipse 30 10 "solid" "green"))     ;tread outline
@@ -371,13 +375,13 @@
 
 
 (check-expect (advance-invaders empty) empty)
-(check-expect (advance-invaders (list (make-invader 4 4 1)
-                                      (make-invader 5 5 1)
-                                      (make-invader 6 6 -1)))
+(check-expect (advance-invaders (list (make-invader 14 14 1)
+                                      (make-invader 15 15 1)
+                                      (make-invader 16 16 -1)))
               (list
-               (make-invader (- 4 INVADER-X-SPEED) (+ 4 INVADER-Y-SPEED)  1)
-               (make-invader (- 5 INVADER-X-SPEED) (+ 5 INVADER-Y-SPEED)  1)
-               (make-invader (+ 6 INVADER-X-SPEED) (+ 6 INVADER-Y-SPEED) -1)))
+               (make-invader (- 14 INVADER-X-SPEED) (+ 14 INVADER-Y-SPEED)  1)
+               (make-invader (- 15 INVADER-X-SPEED) (+ 15 INVADER-Y-SPEED)  1)
+               (make-invader (+ 16 INVADER-X-SPEED) (+ 16 INVADER-Y-SPEED) -1)))
 
 ; (define (advance-invaders loi) loi) ;stub
 
@@ -390,20 +394,40 @@
 
 ; Invader -> Invader
 ;; produce invaders next position in the same dx or bounce if hit boundary
-;; !!!
-(check-expect (next-invader (make-invader 10 11 -1))          ; continue right
-              (make-invader (- 10 (* INVADER-X-SPEED -1)) (+ 11 INVADER-Y-SPEED) -1))
+(check-expect (next-invader (make-invader 30 11 -1))                  ; continue right
+              (make-invader (- 30 (* INVADER-X-SPEED -1)) (+ 11 INVADER-Y-SPEED) -1))
 
-(check-expect (next-invader (make-invader 11 12 1))           ; continue left
-              (make-invader (- 11 (* INVADER-X-SPEED 1)) (+ 12 INVADER-Y-SPEED) 1))
+(check-expect (next-invader (make-invader 40 12 1))                   ; continue left
+              (make-invader (- 40 (* INVADER-X-SPEED 1)) (+ 12 INVADER-Y-SPEED) 1))
 
+(check-expect (next-invader (make-invader INVADER-WIDTH/2 13 1))      ; exactly at l boundary going l flip to r
+              (make-invader (- INVADER-WIDTH/2 (* INVADER-X-SPEED -1)) (+ 13 INVADER-Y-SPEED) -1))
+
+(check-expect (next-invader (make-invader R-WALL-OFFSET 14 -1))       ; exactly at r boundary going r flip to l
+              (make-invader (- R-WALL-OFFSET (* INVADER-X-SPEED 1)) (+ 14 INVADER-Y-SPEED) 1))
+
+(check-expect (next-invader (make-invader (- INVADER-WIDTH/2 1) 15 1)); pass left boundary correct and flip l->r
+              (make-invader INVADER-WIDTH/2 15 -1))
+
+(check-expect (next-invader (make-invader (- R-WALL-OFFSET 1) 16 -1)) ; pass right boundary correct and flip r->l
+              (make-invader R-WALL-OFFSET 16 1))
 
 (define (next-invader i)
-  (make-invader (- (invader-x i) (* INVADER-X-SPEED (invader-dx i))) ; go fruther right dx=-1
-                (+ (invader-y i) INVADER-Y-SPEED)                    ; go left dx=1
-                (invader-dx i)))
-
-
+  (cond [(= (invader-x i) R-WALL-OFFSET)                                        ; exactly at r flip to l
+         (make-invader (- R-WALL-OFFSET (* INVADER-X-SPEED 1))
+                       (+ (invader-y i) INVADER-Y-SPEED) 1)] 
+        [(= L-WALL-OFFSET (invader-x i))                                        ; exactly at l flip to r
+         (make-invader (- (invader-x i) (* INVADER-X-SPEED -1))              
+                       (+ (invader-y i) INVADER-Y-SPEED) -1)]
+        [(< (- (invader-x i) (* INVADER-X-SPEED (invader-dx i))) L-WALL-OFFSET) ; pass left 
+         (make-invader L-WALL-OFFSET
+                       (invader-y i) -1)]
+        [(> (- (invader-x i) (* INVADER-X-SPEED (invader-dx i))) R-WALL-OFFSET) ; pass right 
+         (make-invader R-WALL-OFFSET (invader-y i) 1)]
+        [else
+         (make-invader (- (invader-x i) (* INVADER-X-SPEED (invader-dx i))) ; go fruther right dx=-1
+                       (+ (invader-y i) INVADER-Y-SPEED)                    ; go left dx=1
+                       (invader-dx i))]))
 
 ;; Invaders Number Number -> Invaders
 ;; add new invader to list of invaders on random x and random dx depending on INVADE-RATE
