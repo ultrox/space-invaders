@@ -361,23 +361,45 @@
 
 ;; Invaders -> Invaders
 ;; manages appearence rendering and advancing of enemies
-;; !!!
+;; composition, no tests, un-pure functions
 
 (define (manage-invaders loi)
-  (add-new-invader (advance-invaders loi)))
+  (add-new-invader (advance-invaders loi)
+                   (random 100)
+                   (random WIDTH)
+                   (random 100)))
 
 
 ;; Invaders -> Invaders
-;; advance y position on each invaders with INVADER-SPEED
-;; !!!
+;; advance y position on each invaders based on INVADER-SPEED
+
 (define (advance-invaders loi) loi) ;stub
 
+;; Invaders Number Number -> Invaders
+;; add new invader to list of invaders on random x and random dx depending on INVADE-RATE
 
-;; Invaders -> Invaders
-;; making new invader appear on random x depending on INVADE-RATE
-;; !!!
-(define (add-new-invader loi) empty) ; stub
+(check-random (add-new-invader empty (+ INVADE-RATE 5) 30 2) empty) ; will not gen invader
 
+(check-random (add-new-invader empty INVADE-RATE 30 3)              ; generate invader with dx left 1
+              (list (make-invader 30 0 1)))
+ 
+(check-random (add-new-invader empty INVADE-RATE 30 2)              ; generate invader with dx right -1
+              (list (make-invader 30 0 -1)))
+
+(check-random (add-new-invader empty 10 30 2) empty)
+; (define (add-new-invader loi rdr rw) empty) ; stub
+
+;; rdr (random rate) rw random width
+
+(define (add-new-invader loi rdr rw rdx)
+  (if (>= INVADE-RATE rdr)
+      (cons (make-invader rw 0 (random-dx rdx)) loi)
+      loi))
+
+;; Number -> -1 1
+;; given even number, retrun -1(right dx) odd 1(left dx)
+;; !!! make new Data Definition for direction
+(define (random-dx n) (if (zero? (modulo n 2)) -1 1))
 
 ;; Invaders -> Image
 ;; render each invader from list at their respective x,y
