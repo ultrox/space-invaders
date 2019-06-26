@@ -1,3 +1,6 @@
+;; The first three lines of this file were inserted by DrRacket. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-beginner-abbr-reader.ss" "lang")((modname space-invaders) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
 (require 2htdp/universe)
 (require 2htdp/image)
 
@@ -16,7 +19,7 @@
 
 (define HIT-RANGE 10)
 
-(define INVADE-RATE 100)
+(define INVADE-RATE 1) ; 1% chance to get invader per tick
 
 (define BACKGROUND (empty-scene WIDTH HEIGHT))
 
@@ -24,6 +27,10 @@
   (overlay/xy (ellipse 10 15 "outline" "blue")              ;cockpit cover
               -5 6
               (ellipse 20 10 "solid"   "blue")))            ;saucer
+
+(define INVADER-WIDTH/2 (/ (image-width INVADER) 2))
+(define R-WALL-OFFSET (- WIDTH INVADER-WIDTH/2))
+(define L-WALL-OFFSET INVADER-WIDTH/2)
 
 (define TANK
   (overlay/xy (overlay (ellipse 28 8 "solid" "black")       ;tread center
@@ -39,6 +46,8 @@
 (define MISSLE-ORIGIN (- HEIGHT (image-height TANK)))
 
 (define MTS (empty-scene WIDTH HEIGHT))
+(define FAIL-MSG-IMG (text "YOU LOST" 24 "olive"))
+(define SUCC-MSG-IMG (text "YOU LOST" 24 "olive"))
 
 ;; Controls
 (define RIGHT "l")
@@ -137,9 +146,10 @@
 ;; 
 (define (main dx)
   (big-bang (make-game empty empty (make-tank 0 dx))                      ; Game
-    (on-tick   next-game)     ; Game -> Game
-    (to-draw   render-game)   ; Game -> Image
-    (on-key    handle-key)))  ; Game KeyEvent -> Game
+    (on-tick   next-game)             ; Game -> Game
+    (to-draw   render-game)           ; Game -> Image
+    (stop-when game-end? render-last) ; Game -> Boolean
+    (on-key    handle-key)))          ; Game KeyEvent -> Game
 
 ;; Game -> Game
 ;; produce the next state of the game
@@ -152,7 +162,7 @@
               (make-game empty empty (make-tank (+ TANK-SPEED (- -1) 10) -1)))
 
 ;(define (next-game game) game) ; stub
-(define (next-game game) (make-game empty
+(define (next-game game) (make-game (manage-invaders (game-invaders game))
                                     (advance-msls (game-missiles game))
                                     (advance-tank (game-tank game))))
 
@@ -197,9 +207,9 @@
 
 
 (define (render-game g)
-  (render-missiles
-   (game-missiles g)
-   (render-tank (game-tank g))))
+  (render-invaders (game-invaders g) (render-missiles
+                                      (game-missiles g)
+                                      (render-tank (game-tank g)))))
 
 
 (define (render-tank t)
@@ -340,3 +350,166 @@
 
 (define (advance-y m)
   (make-missile (missile-x m) (- (missile-y m) MISSILE-SPEED)))
+
+;; INVADERS
+;; ========
+
+;; Invaders is one of:
+;;  - empty
+;;  - (cons Invader Invaders)
+;; interp. list of invaders
+
+(define INVS1 empty)
+(define INVS2 (list I1 I2))
+
+#;
+(define (fn-for-invaders loi)
+  (cond [(empty? loi) ...]
+        [else
+         (... (fn-for-invader (first loi))
+              (fn-for-invaders (rest loi)))]))
+
+;; Invaders -> Invaders
+;; manages appearence rendering and advancing of enemies
+;; composition, no tests, un-pure functions
+
+(define (manage-invaders loi)
+  (add-new-invader (advance-invaders loi)
+                   (random 100)
+                   (random WIDTH)
+                   (random 100)))
+
+
+(check-expect (advance-invaders empty) empty)
+(check-expect (advance-invaders (list (make-invader 14 14 1)
+                                      (make-invader 15 15 1)
+                                      (make-invader 16 16 -1)))
+              (list
+               (make-invader (- 14 INVADER-X-SPEED) (+ 14 INVADER-Y-SPEED)  1)
+               (make-invader (- 15 INVADER-X-SPEED) (+ 15 INVADER-Y-SPEED)  1)
+               (make-invader (+ 16 INVADER-X-SPEED) (+ 16 INVADER-Y-SPEED) -1)))
+
+; (define (advance-invaders loi) loi) ;stub
+
+(define (advance-invaders loi)
+  (cond [(empty? loi) empty]
+        [else
+         (cons (next-invader (first loi))
+               (advance-invaders (rest loi)))]))
+
+
+; Invader -> Invader
+;; produce invaders next position in the same dx or bounce if hit boundary
+(check-expect (next-invader (make-invader 30 11 -1))                  ; continue right
+              (make-invader (- 30 (* INVADER-X-SPEED -1)) (+ 11 INVADER-Y-SPEED) -1))
+
+(check-expect (next-invader (make-invader 40 12 1))                   ; continue left
+              (make-invader (- 40 (* INVADER-X-SPEED 1)) (+ 12 INVADER-Y-SPEED) 1))
+
+(check-expect (next-invader (make-invader INVADER-WIDTH/2 13 1))      ; exactly at l boundary going l flip to r
+              (make-invader (- INVADER-WIDTH/2 (* INVADER-X-SPEED -1)) (+ 13 INVADER-Y-SPEED) -1))
+
+(check-expect (next-invader (make-invader R-WALL-OFFSET 14 -1))       ; exactly at r boundary going r flip to l
+              (make-invader (- R-WALL-OFFSET (* INVADER-X-SPEED 1)) (+ 14 INVADER-Y-SPEED) 1))
+
+(check-expect (next-invader (make-invader (- INVADER-WIDTH/2 1) 15 1)); pass left boundary correct and flip l->r
+              (make-invader INVADER-WIDTH/2 15 -1))
+
+(check-expect (next-invader (make-invader (- R-WALL-OFFSET 1) 16 -1)) ; pass right boundary correct and flip r->l
+              (make-invader R-WALL-OFFSET 16 1))
+
+(define (next-invader i)
+  (cond [(= (invader-x i) R-WALL-OFFSET)                                        ; exactly at r flip to l
+         (make-invader (- R-WALL-OFFSET (* INVADER-X-SPEED 1))
+                       (+ (invader-y i) INVADER-Y-SPEED) 1)] 
+        [(= L-WALL-OFFSET (invader-x i))                                        ; exactly at l flip to r
+         (make-invader (- (invader-x i) (* INVADER-X-SPEED -1))              
+                       (+ (invader-y i) INVADER-Y-SPEED) -1)]
+        [(< (- (invader-x i) (* INVADER-X-SPEED (invader-dx i))) L-WALL-OFFSET) ; pass left 
+         (make-invader L-WALL-OFFSET
+                       (invader-y i) -1)]
+        [(> (- (invader-x i) (* INVADER-X-SPEED (invader-dx i))) R-WALL-OFFSET) ; pass right 
+         (make-invader R-WALL-OFFSET (invader-y i) 1)]
+        [else
+         (make-invader (- (invader-x i) (* INVADER-X-SPEED (invader-dx i))) ; go fruther right dx=-1
+                       (+ (invader-y i) INVADER-Y-SPEED)                    ; go left dx=1
+                       (invader-dx i))]))
+
+;; Invaders Number Number -> Invaders
+;; add new invader to list of invaders on random x and random dx depending on INVADE-RATE
+
+(check-random (add-new-invader empty (+ INVADE-RATE 5) 30 2) empty) ; will not gen invader
+
+(check-random (add-new-invader empty INVADE-RATE 30 3)              ; generate invader with dx left 1
+              (list (make-invader 30 0 1)))
+ 
+(check-random (add-new-invader empty INVADE-RATE 30 2)              ; generate invader with dx right -1
+              (list (make-invader 30 0 -1)))
+
+(check-random (add-new-invader empty 10 30 2) empty)
+; (define (add-new-invader loi rdr rw) empty) ; stub
+
+;; rdr (random rate) rw random width
+
+(define (add-new-invader loi rdr rw rdx)
+  (if (>= INVADE-RATE rdr)
+      (cons (make-invader rw 0 (random-dx rdx)) loi)
+      loi))
+
+;; Number -> -1 1
+;; given even number, retrun -1(right dx) odd 1(left dx)
+;; !!! make new Data Definition for direction
+(define (random-dx n) (if (zero? (modulo n 2)) -1 1))
+
+;; Game -> Boolean
+;; return true when invader-y is equal to WIDTH
+(check-expect (game-end? (make-game empty empty T0)) false)
+(check-expect (game-end? (make-game (list (make-invader 40 40 -1)) empty T0)) false)
+(check-expect (game-end? (make-game
+                          (list (make-invader 10 0 -1)
+                                (make-invader 40 HEIGHT -1))
+                          empty
+                          T0))
+              true)
+
+; (define (game-end? g) false) ;stub
+
+(define (game-end? s)
+  (cond [(empty? (game-invaders s)) false]
+        [(invader-landed? (first (reverse (game-invaders s)))) true]
+        [else false]))
+
+;; Invader -> Boolean
+;; produce true if invader has landed
+;; landed means: invader-y >= WIDTH
+(check-expect (invader-landed? (make-invader 30 40 -1)) false)
+(check-expect (invader-landed? (make-invader 30 HEIGHT -1)) true)
+
+; (define (invader-landed? i) false) ;stub
+
+(define (invader-landed? i) (>= (invader-y i) HEIGHT))
+
+;; Game -> Image
+;; render FAIL-MSG-IMG when invader lands
+(check-expect (render-last (make-game empty empty T1))
+              (place-image FAIL-MSG-IMG (/ WIDTH 2) (/ HEIGHT 2) MTS))
+
+; (define (render-last g) (empty-scene)) ;stub
+
+(define (render-last g)
+  (place-image FAIL-MSG-IMG (/ WIDTH 2) (/ HEIGHT 2) MTS))
+
+
+;; Invaders -> Image
+;; render each invader from list at their respective x,y
+
+; (define (render-invaders loi img) img) ; stub
+
+
+(define (render-invaders loi img)
+  (cond [(empty? loi) img]
+        [else
+         (place-image INVADER
+                      (invader-x (first loi)) ; helper not needed, not complex
+                      (invader-y (first loi))
+                      (render-invaders (rest loi) img))]))
