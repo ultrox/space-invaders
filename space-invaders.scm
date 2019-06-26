@@ -1,3 +1,6 @@
+;; The first three lines of this file were inserted by DrRacket. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-beginner-abbr-reader.ss" "lang")((modname space-invaders) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
 (require 2htdp/universe)
 (require 2htdp/image)
 
@@ -43,6 +46,8 @@
 (define MISSLE-ORIGIN (- HEIGHT (image-height TANK)))
 
 (define MTS (empty-scene WIDTH HEIGHT))
+(define FAIL-MSG-IMG (text "YOU LOST" 24 "olive"))
+(define SUCC-MSG-IMG (text "YOU LOST" 24 "olive"))
 
 ;; Controls
 (define RIGHT "l")
@@ -141,9 +146,10 @@
 ;; 
 (define (main dx)
   (big-bang (make-game empty empty (make-tank 0 dx))                      ; Game
-    (on-tick   next-game)     ; Game -> Game
-    (to-draw   render-game)   ; Game -> Image
-    (on-key    handle-key)))  ; Game KeyEvent -> Game
+    (on-tick   next-game)             ; Game -> Game
+    (to-draw   render-game)           ; Game -> Image
+    (stop-when game-end? render-last) ; Game -> Boolean
+    (on-key    handle-key)))          ; Game KeyEvent -> Game
 
 ;; Game -> Game
 ;; produce the next state of the game
@@ -454,6 +460,45 @@
 ;; given even number, retrun -1(right dx) odd 1(left dx)
 ;; !!! make new Data Definition for direction
 (define (random-dx n) (if (zero? (modulo n 2)) -1 1))
+
+;; Game -> Boolean
+;; return true when invader-y is equal to WIDTH
+(check-expect (game-end? (make-game empty empty T0)) false)
+(check-expect (game-end? (make-game (list (make-invader 40 40 -1)) empty T0)) false)
+(check-expect (game-end? (make-game
+                          (list (make-invader 10 0 -1)
+                                (make-invader 40 HEIGHT -1))
+                          empty
+                          T0))
+              true)
+
+; (define (game-end? g) false) ;stub
+
+(define (game-end? s)
+  (cond [(empty? (game-invaders s)) false]
+        [(invader-landed? (first (reverse (game-invaders s)))) true]
+        [else false]))
+
+;; Invader -> Boolean
+;; produce true if invader has landed
+;; landed means: invader-y >= WIDTH
+(check-expect (invader-landed? (make-invader 30 40 -1)) false)
+(check-expect (invader-landed? (make-invader 30 HEIGHT -1)) true)
+
+; (define (invader-landed? i) false) ;stub
+
+(define (invader-landed? i) (>= (invader-y i) HEIGHT))
+
+;; Game -> Image
+;; render FAIL-MSG-IMG when invader lands
+(check-expect (render-last (make-game empty empty T1))
+              (place-image FAIL-MSG-IMG (/ WIDTH 2) (/ HEIGHT 2) MTS))
+
+; (define (render-last g) (empty-scene)) ;stub
+
+(define (render-last g)
+  (place-image FAIL-MSG-IMG (/ WIDTH 2) (/ HEIGHT 2) MTS))
+
 
 ;; Invaders -> Image
 ;; render each invader from list at their respective x,y
