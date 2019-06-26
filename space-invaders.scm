@@ -148,6 +148,7 @@
   (big-bang (make-game empty empty (make-tank 0 dx))                      ; Game
     (on-tick   next-game)             ; Game -> Game
     (to-draw   render-game)           ; Game -> Image
+    (on-release handle-shooting)      ; Game KeyEvent -> Game
     (stop-when game-end? render-last) ; Game -> Boolean
     (on-key    handle-key)))          ; Game KeyEvent -> Game
 
@@ -216,10 +217,7 @@
   (place-image TANK (tank-x t) (- HEIGHT TANK-HEIGHT/2) BACKGROUND))
 
 ;; Game KeyEvent -> Game
-;; controle direction of tank & missle shooting
-
-; SHOOTING CASE
-;;!!!
+;; controle direction of tank based on key-events in RIGHT LEFT constants
 
 ; RIGHT CASES
 (check-expect (handle-key (make-game empty empty (make-tank 40 1)) RIGHT)
@@ -244,10 +242,27 @@
         [(key=? ke RIGHT) (make-game  (game-invaders g)
                                       (game-missiles g)
                                       (turn-tank (game-tank g) -1))]
-        [(key=? ke SPACE) (make-game  (game-invaders g)
+        
+        [else g]))
+
+;; Game KeyEvent -> Game
+;; shoot a missile when user relese SPACE key
+(check-expect (handle-shooting (make-game empty empty (make-tank 40 -1)) "w")
+              (make-game empty empty (make-tank 40 -1)))
+
+(check-expect (handle-shooting (make-game empty empty (make-tank 40 -1)) SPACE)
+              (make-game empty (list (make-missile 40 MISSLE-ORIGIN)) (make-tank 40 -1)))
+
+; (define (handle-shooting game ke) game) ;stub
+
+; <Template from recepie handle-key>
+
+(define (handle-shooting g ke)
+  (cond [(key=? ke SPACE) (make-game  (game-invaders g)
                                       (shoot (game-missiles g) (game-tank g))
                                       (game-tank g))]
         [else g]))
+
 
 ;; Tank ndx -> Tank
 ;; produce correct new x position based given ndx(next direction)
