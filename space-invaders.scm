@@ -1,3 +1,6 @@
+;; The first three lines of this file were inserted by DrRacket. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-beginner-abbr-reader.ss" "lang")((modname space-invaders) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
 (require 2htdp/universe)
 (require 2htdp/image)
 
@@ -140,10 +143,11 @@
 ;; start the world with (main (make-game empty empty T101))
 ;; 
 (define (main dx)
-  (big-bang (make-game empty empty (make-tank 0 dx))                      ; Game
-    (on-tick   next-game)     ; Game -> Game
-    (to-draw   render-game)   ; Game -> Image
-    (on-key    handle-key)))  ; Game KeyEvent -> Game
+  (big-bang (make-game empty empty (make-tank 0 dx)) ; Game
+    (on-tick   next-game)        ; Game -> Game
+    (to-draw   render-game)      ; Game -> Image
+    (on-release handle-shooting) ; Game KeyEvent -> Game
+    (on-key    handle-key)))     ; Game KeyEvent -> Game
 
 ;; Game -> Game
 ;; produce the next state of the game
@@ -210,10 +214,7 @@
   (place-image TANK (tank-x t) (- HEIGHT TANK-HEIGHT/2) BACKGROUND))
 
 ;; Game KeyEvent -> Game
-;; controle direction of tank & missle shooting
-
-; SHOOTING CASE
-;;!!!
+;; controle direction of tank based on key-events in RIGHT LEFT constants
 
 ; RIGHT CASES
 (check-expect (handle-key (make-game empty empty (make-tank 40 1)) RIGHT)
@@ -238,10 +239,27 @@
         [(key=? ke RIGHT) (make-game  (game-invaders g)
                                       (game-missiles g)
                                       (turn-tank (game-tank g) -1))]
-        [(key=? ke SPACE) (make-game  (game-invaders g)
+        
+        [else g]))
+
+;; Game KeyEvent -> Game
+;; shoot a missile when user relese SPACE key
+(check-expect (handle-shooting (make-game empty empty (make-tank 40 -1)) "w")
+              (make-game empty empty (make-tank 40 -1)))
+
+(check-expect (handle-shooting (make-game empty empty (make-tank 40 -1)) SPACE)
+              (make-game empty (list (make-missile 40 MISSLE-ORIGIN)) (make-tank 40 -1)))
+
+; (define (handle-shooting game ke) game) ;stub
+
+; <Template from recepie handle-key>
+
+(define (handle-shooting g ke)
+  (cond [(key=? ke SPACE) (make-game  (game-invaders g)
                                       (shoot (game-missiles g) (game-tank g))
                                       (game-tank g))]
         [else g]))
+
 
 ;; Tank ndx -> Tank
 ;; produce correct new x position based given ndx(next direction)
