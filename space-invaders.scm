@@ -604,14 +604,22 @@
 
 ;; Invaders -> Image
 ;; render each invader from list at their respective x,y
+(check-expect (render-invaders empty MTS) MTS)
+(check-expect (render-invaders (list (make-invader 20 20 -1)
+                                     (make-invader 50 50 -1)
+                                     (make-invader 100 100 1)) MTS)
+              (place-image INVADER 20 20
+                           (place-image INVADER 50 50
+                                        (place-image INVADER 100 100 MTS))))
 
 ; (define (render-invaders loi img) img) ; stub
 
+; <Template from Invaders>
 
 (define (render-invaders loi img)
   (cond [(empty? loi) img]
         [else
          (place-image INVADER
-                      (invader-x (first loi)) ; helper not needed, not complex
+                      (invader-x (first loi))
                       (invader-y (first loi))
                       (render-invaders (rest loi) img))]))
