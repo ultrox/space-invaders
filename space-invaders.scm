@@ -50,8 +50,8 @@
 (define SUCC-MSG-IMG (text "YOU LOST" 24 "olive"))
 
 ;; Controls
-(define RIGHT "l")
-(define LEFT "h")
+(define RIGHT "right")
+(define LEFT "left")
 (define SPACE " ")
 
 ;; FOR TESTING
