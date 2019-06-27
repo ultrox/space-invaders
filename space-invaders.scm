@@ -154,13 +154,13 @@
 
 ;; Game -> Game
 ;; produce the next state of the game
-;; !!!
 
 ; Movement
 ;; NORMAL going right increment x by SPEED
-#;
+
 (check-expect (next-game (make-game empty empty (make-tank 10 -1)))
-              (make-game empty empty (make-tank (+ TANK-SPEED (- -1) 10) -1)))
+              (make-game empty empty (make-tank 15 -1)))
+
 
 ;(define (next-game game) game) ; stub
 (define (next-game game) (make-game (manage-invaders (game-invaders game)
@@ -202,8 +202,7 @@
 
 ;; Game -> Image
 ;; render game with all its elements 
-;; !!!
-#;
+
 (check-expect (render-game (make-game empty empty T0)) ;; exapmle 
               (place-image TANK (tank-x T1) (- HEIGHT TANK-HEIGHT/2) BACKGROUND))
 
