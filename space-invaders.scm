@@ -43,7 +43,7 @@
 (define TANK-WIDTH/2 (/ (image-width TANK) 2))
 
 (define MISSILE (ellipse 5 15 "solid" "red"))
-(define MISSLE-ORIGIN (- HEIGHT (image-height TANK)))
+(define MISSILE-ORIGIN (- HEIGHT (image-height TANK)))
 
 (define MTS (empty-scene WIDTH HEIGHT))
 (define FAIL-MSG-IMG (text "YOU LOST" 24 "olive"))
@@ -253,7 +253,7 @@
               (make-game empty empty (make-tank 40 -1)))
 
 (check-expect (handle-shooting (make-game empty empty (make-tank 40 -1)) SPACE)
-              (make-game empty (list (make-missile 40 MISSLE-ORIGIN)) (make-tank 40 -1)))
+              (make-game empty (list (make-missile 40 MISSILE-ORIGIN)) (make-tank 40 -1)))
 
 ; (define (handle-shooting game ke) game) ;stub
 
@@ -285,9 +285,9 @@
 
 ;; Missles Tank -> Missles
 ;; add new missile to the list 'shooting' of missiles from tank x-axis
-(check-expect (shoot empty (make-tank 10 -1)) (list (make-missile 10 MISSLE-ORIGIN))) 
+(check-expect (shoot empty (make-tank 10 -1)) (list (make-missile 10 MISSILE-ORIGIN))) 
 (check-expect (shoot (list (make-missile 10 20)) (make-tank 100 -1))
-              (list (make-missile 100 MISSLE-ORIGIN) (make-missile 10 20)))
+              (list (make-missile 100 MISSILE-ORIGIN) (make-missile 10 20)))
 
 
 ; (define (shoot lom t) empty) ; stub
@@ -295,22 +295,22 @@
 ; <Template from Missiles>
 
 (define (shoot msls t)
-  (cond [(empty? msls) (list (make-missile (tank-x t) MISSLE-ORIGIN))]
+  (cond [(empty? msls) (list (make-missile (tank-x t) MISSILE-ORIGIN))]
         [else
-         (cons (make-missile (tank-x t) MISSLE-ORIGIN) msls)]))
+         (cons (make-missile (tank-x t) MISSILE-ORIGIN) msls)]))
 
 ;; Missiles Image -> Image
 ;; render missiles on appropriate x,y possitions
 (check-expect (render-missiles empty RENDER-TANKx100)
               RENDER-TANKx100)                                    ; no missiles (base case)
 (check-expect (render-missiles (list
-                                (make-missile 100 MISSLE-ORIGIN)  ; just fired
+                                (make-missile 100 MISSILE-ORIGIN)  ; just fired
                                 (make-missile 200 200)            ; normal 
                                 (make-missile 20 0))              ; exiting world view
                                RENDER-TANKx100)             
               (place-image MISSILE 20 0
                            (place-image MISSILE 200 200
-                                        (place-image MISSILE 100 MISSLE-ORIGIN RENDER-TANKx100))))
+                                        (place-image MISSILE 100 MISSILE-ORIGIN RENDER-TANKx100))))
 
 
 ; (define (render-missiles msls img) img) ; stub
@@ -328,15 +328,15 @@
 ;; Missiles -> Missiles
 ;; advance each y-axis of a given missile in the list
 (check-expect (advance-msls empty) empty)
-(check-expect (advance-msls (list (make-missile 20 MISSLE-ORIGIN)))
-              (list (make-missile 20 (- MISSLE-ORIGIN MISSILE-SPEED))))
+(check-expect (advance-msls (list (make-missile 20 MISSILE-ORIGIN)))
+              (list (make-missile 20 (- MISSILE-ORIGIN MISSILE-SPEED))))
 
 (check-expect (advance-msls (list (make-missile 20 100) (make-missile 20 200)))
               (list (make-missile 20 (- 100 MISSILE-SPEED))
                     (make-missile 20 (- 200 MISSILE-SPEED))))
 
-(check-expect (advance-msls (list (make-missile 20 -10) (make-missile 20 MISSLE-ORIGIN)))
-              (list (make-missile 20 (- MISSLE-ORIGIN MISSILE-SPEED))))
+(check-expect (advance-msls (list (make-missile 20 -10) (make-missile 20 MISSILE-ORIGIN)))
+              (list (make-missile 20 (- MISSILE-ORIGIN MISSILE-SPEED))))
 
 ; (define (advance-msls msls) msls) ;stub
 ; <Template from Missiles>
@@ -350,7 +350,7 @@
 
 ;; Missile -> Boolean
 ;; return true if missile y is smaller then 0 (outside of visible canvas)
-(check-expect (out-range? (make-missile 30            MISSLE-ORIGIN)) false) ; don't filter #false
+(check-expect (out-range? (make-missile 30            MISSILE-ORIGIN)) false) ; don't filter #false
 (check-expect (out-range? (make-missile 30                   HEIGHT)) false) ; filter #true
 (check-expect (out-range? (make-missile 30      (- 0 MISSILE-SPEED)))  true)  ; outside visible canvas
 
@@ -529,7 +529,7 @@
                                  (make-invader 40 40 -1)
                                  (make-invader 50 50 -1))
                            (list (make-missile 30 30)    ; in HIT-RANGE 
-                                 (make-missile 60 MISSLE-ORIGIN)))
+                                 (make-missile 60 MISSILE-ORIGIN)))
               (list (make-invader 50 50 -1)))
 
 ; (define (filter-dead loi lom) empty) ; stub
@@ -551,22 +551,22 @@
 
 (check-expect (hit? (make-invader 210 260 -1) ; x & y in HIT-RANGE
                     (list (make-missile 20 250)
-                          (make-missile 150 MISSLE-ORIGIN)
+                          (make-missile 150 MISSILE-ORIGIN)
                           (make-missile 200 250))) true)
 
 (check-expect (hit? (make-invader 211 261 -1) ; x & y out HIT-RANGE
                     (list (make-missile 20 250)
-                          (make-missile 150 MISSLE-ORIGIN)
+                          (make-missile 150 MISSILE-ORIGIN)
                           (make-missile 200 250))) false)
 
 (check-expect (hit? (make-invader 210 261 -1) ; x in HIT-RANGE y out
                     (list (make-missile 20 250)
-                          (make-missile 150 MISSLE-ORIGIN)
+                          (make-missile 150 MISSILE-ORIGIN)
                           (make-missile 200 250))) false)
 
 (check-expect (hit? (make-invader 211 260 -1) ; y in HIT-RANGE x out
                     (list (make-missile 20 250)
-                          (make-missile 150 MISSLE-ORIGIN)
+                          (make-missile 150 MISSILE-ORIGIN)
                           (make-missile 200 250))) false)
 
 ; the same y, different x miss
@@ -591,7 +591,7 @@
 (check-expect (collision? (make-missile (- 200 HIT-RANGE) 120) ; 1px OUT HIT-RANGE
                           (make-invader 201 120 -1)) false)
 
-(check-expect (collision? (make-missile 100 MISSLE-ORIGIN)
+(check-expect (collision? (make-missile 100 MISSILE-ORIGIN)
                           (make-invader 100 10 -1)) false)
 
 ; (define (collision? m i) false) ; stub
