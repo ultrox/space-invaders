@@ -140,9 +140,9 @@
 
 ;; =================
 ;; Functions:
-(define T101 (make-tank 0 -1))
+
 ;; Game -> Game
-;; start the world with (main (make-game empty empty T101))
+;; start the world with (main -1)
 ;; 
 (define (main dx)
   (big-bang (make-game empty empty (make-tank 0 dx))                      ; Game
