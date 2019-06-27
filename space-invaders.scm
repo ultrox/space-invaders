@@ -203,15 +203,17 @@
 ;; Game -> Image
 ;; render game with all its elements 
 
-(check-expect (render-game (make-game empty empty T0)) ;; exapmle 
-              (place-image TANK (tank-x T1) (- HEIGHT TANK-HEIGHT/2) BACKGROUND))
-
-
 (define (render-game g)
   (render-invaders (game-invaders g) (render-missiles
                                       (game-missiles g)
                                       (render-tank (game-tank g)))))
 
+;; Tank -> Image
+;; render TANK on BACKGROUND based on tank-x
+(check-expect (render-tank (make-tank 30 -1))
+              (place-image TANK 30 (- HEIGHT TANK-HEIGHT/2) BACKGROUND))
+
+; (define (render-tank t) empty-image) ; stub
 
 (define (render-tank t)
   (place-image TANK (tank-x t) (- HEIGHT TANK-HEIGHT/2) BACKGROUND))
