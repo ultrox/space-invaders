@@ -19,7 +19,7 @@
 
 (define HIT-RANGE 10)
 
-(define INVADE-RATE 1) ; 1% chance to get invader per tick
+(define INVADE-RATE 2) ; 2% chance to get invader per tick, bigger number more invaders
 
 (define BACKGROUND (empty-scene WIDTH HEIGHT))
 
@@ -163,7 +163,8 @@
               (make-game empty empty (make-tank (+ TANK-SPEED (- -1) 10) -1)))
 
 ;(define (next-game game) game) ; stub
-(define (next-game game) (make-game (manage-invaders (game-invaders game))
+(define (next-game game) (make-game (manage-invaders (game-invaders game)
+                                                     (game-missiles game))
                                     (advance-msls (game-missiles game))
                                     (advance-tank (game-tank game))))
 
@@ -388,11 +389,12 @@
 ;; manages appearence rendering and advancing of enemies
 ;; composition, no tests, un-pure functions
 
-(define (manage-invaders loi)
-  (add-new-invader (advance-invaders loi)
-                   (random 100)
-                   (random WIDTH)
-                   (random 100)))
+(define (manage-invaders loi lom)
+  (filter-dead (add-new-invader (advance-invaders loi)
+                                (random 100)
+                                (random WIDTH)
+                                (random 100))
+               lom))
 
 
 (check-expect (advance-invaders empty) empty)
@@ -473,7 +475,7 @@
 
 ;; Number -> -1 1
 ;; given even number, retrun -1(right dx) odd 1(left dx)
-;; !!! make new Data Definition for direction
+
 (define (random-dx n) (if (zero? (modulo n 2)) -1 1))
 
 ;; Game -> Boolean
@@ -513,6 +515,91 @@
 
 (define (render-last g)
   (place-image FAIL-MSG-IMG (/ WIDTH 2) (/ HEIGHT 2) MTS))
+
+;; Invaders Missles -> Invaders
+;; remove specific hit Invader from Invaders based on result of hit? fn
+
+(check-expect (filter-dead empty empty) empty)
+(check-expect (filter-dead (list (make-invader 30 30 -1))
+                           empty)
+              (list (make-invader 30 30 -1)))
+
+(check-expect (filter-dead (list (make-invader 20 30 -1) ; hit
+                                 (make-invader 40 40 -1)
+                                 (make-invader 50 50 -1))
+                           (list (make-missile 30 30)    ; in HIT-RANGE 
+                                 (make-missile 60 MISSLE-ORIGIN)))
+              (list (make-invader 50 50 -1)))
+
+; (define (filter-dead loi lom) empty) ; stub
+
+(define (filter-dead loi lom)
+  (cond [(empty? loi) empty]
+        [else
+         (cond [(hit? (first loi) lom) (filter-dead (rest loi) lom)]
+               [else
+                (cons (first loi) (filter-dead (rest loi) lom))])]))
+
+
+;; Invader Missiles -> Boolean
+;; return true when x, y of invader is the same of missile,
+;; factoring in HIT-RANGE as offset
+
+(check-expect (hit? (make-invader 200 250 -1) ; no missiles, miss
+                    empty) false)
+
+(check-expect (hit? (make-invader 210 260 -1) ; x & y in HIT-RANGE
+                    (list (make-missile 20 250)
+                          (make-missile 150 MISSLE-ORIGIN)
+                          (make-missile 200 250))) true)
+
+(check-expect (hit? (make-invader 211 261 -1) ; x & y out HIT-RANGE
+                    (list (make-missile 20 250)
+                          (make-missile 150 MISSLE-ORIGIN)
+                          (make-missile 200 250))) false)
+
+(check-expect (hit? (make-invader 210 261 -1) ; x in HIT-RANGE y out
+                    (list (make-missile 20 250)
+                          (make-missile 150 MISSLE-ORIGIN)
+                          (make-missile 200 250))) false)
+
+(check-expect (hit? (make-invader 211 260 -1) ; y in HIT-RANGE x out
+                    (list (make-missile 20 250)
+                          (make-missile 150 MISSLE-ORIGIN)
+                          (make-missile 200 250))) false)
+
+; the same y, different x miss
+; the same x different y miss
+
+;(define (hit? i lom) false) ;stub
+
+; <Template from Missiles>
+
+(define (hit? i msls)
+  (cond [(empty? msls) false]
+        [else
+         (cond [(collision? (first msls) i) true]
+               [else (hit? i (rest msls))])]))
+
+;; Missile Invader -> Boolean
+;; produce true if Missile is in HIT-RANGE of Invader
+
+(check-expect (collision? (make-missile (- 200 HIT-RANGE) 120) ; just in HIT-RANGE
+                          (make-invader 200 120 -1)) true)
+
+(check-expect (collision? (make-missile (- 200 HIT-RANGE) 120) ; 1px OUT HIT-RANGE
+                          (make-invader 201 120 -1)) false)
+
+(check-expect (collision? (make-missile 100 MISSLE-ORIGIN)
+                          (make-invader 100 10 -1)) false)
+
+; (define (collision? m i) false) ; stub
+
+(define (collision? m i)
+  (if (and (<= (abs (- (invader-x i) (missile-x m))) HIT-RANGE)
+           (<= (abs (- (invader-y i) (missile-y m))) HIT-RANGE))
+      true
+      false))
 
 
 ;; Invaders -> Image
