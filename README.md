@@ -2,6 +2,8 @@
 
 Recreating minimum features set of space invaders in Scheme (dialect of Lisp).
 
+![](./domain_a.png)
+
 ## Features
 - User can interact with tank, move it left/right and shoot
 - User can kill enemy ships by shooting projectiles
