@@ -2,7 +2,11 @@
 
 Recreating minimum features set of space invaders in Scheme (dialect of Lisp).
 
+### Domain Analysis
 ![](./domain_a.png)
+
+### Demo
+![](./space-invaders-demo.gif)
 
 ## Features
 - User can interact with tank, move it left/right and shoot
